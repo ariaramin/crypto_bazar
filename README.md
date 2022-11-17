@@ -1,6 +1,6 @@
 # crypto_bazar
 
-A new Flutter project.
+![image](preview/crypto_bazar.png)
 
 ## Getting Started
 

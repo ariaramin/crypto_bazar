@@ -2,6 +2,7 @@ import 'package:crypto_bazar/constants/constants.dart';
 import 'package:crypto_bazar/models/Crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:crypto_bazar/repository.dart';
+import 'package:unicons/unicons.dart';
 
 class CoinListScreen extends StatefulWidget {
   CoinListScreen({super.key, this.cryptoList});
@@ -13,6 +14,7 @@ class CoinListScreen extends StatefulWidget {
 
 class _CoinListScreenState extends State<CoinListScreen> {
   List<Crypto>? _cryptoList;
+  bool _isSearchListEmpty = false;
 
   @override
   void initState() {
@@ -44,16 +46,66 @@ class _CoinListScreenState extends State<CoinListScreen> {
   }
 
   Widget _getBody() {
-    return RefreshIndicator(
-      backgroundColor: primaryColor,
-      color: blackColor,
-      onRefresh: _refresh,
-      child: ListView.builder(
-        itemCount: _cryptoList!.length,
-        itemBuilder: (context, index) {
-          return _getListTile(_cryptoList![index]);
-        },
-      ),
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: TextField(
+              onChanged: (value) {
+                _search(value);
+              },
+              decoration: InputDecoration(
+                hintText: "اسم رمزارز مورد نظر را وارد کنید...",
+                hintStyle: TextStyle(
+                  fontFamily: "Morabba",
+                  color: blackColor,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    width: 0,
+                    style: BorderStyle.none,
+                  ),
+                ),
+                prefixIcon: Icon(
+                  UniconsLine.search,
+                  color: blackColor,
+                ),
+                filled: true,
+                fillColor: primaryColor,
+              ),
+            ),
+          ),
+        ),
+        Visibility(
+          visible: _isSearchListEmpty,
+          child: Text(
+            "!رمزارز مورد نظر یافت نشد",
+            style: TextStyle(
+              fontFamily: "Morabba",
+              color: primaryColor,
+            ),
+          ),
+        ),
+        Visibility(
+          visible: !_isSearchListEmpty,
+          child: Expanded(
+            child: RefreshIndicator(
+              backgroundColor: primaryColor,
+              color: blackColor,
+              onRefresh: _refresh,
+              child: ListView.builder(
+                itemCount: _cryptoList!.length,
+                itemBuilder: (context, index) {
+                  return _getListTile(_cryptoList![index]);
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -89,7 +141,7 @@ class _CoinListScreenState extends State<CoinListScreen> {
         ),
       ),
       trailing: SizedBox(
-        width: 148,
+        width: 156,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -116,7 +168,7 @@ class _CoinListScreenState extends State<CoinListScreen> {
               ],
             ),
             SizedBox(
-              width: 50,
+              width: 48,
               child: Center(
                 child: _getIconChangePercent(crypto.changePercent24Hr),
               ),
@@ -149,6 +201,27 @@ class _CoinListScreenState extends State<CoinListScreen> {
     var refreshedData = await getData();
     setState(() {
       _cryptoList = refreshedData;
+    });
+  }
+
+  Future<void> _search(String value) async {
+    List<Crypto> searchedList = [];
+    if (value.isEmpty) {
+      _refresh();
+      return;
+    }
+
+    var refreshedData = await getData();
+
+    searchedList = refreshedData!.where((element) {
+      return element.name.toLowerCase().contains(value.toLowerCase());
+    }).toList();
+
+    setState(() {
+      _cryptoList = searchedList;
+      searchedList.isEmpty
+          ? _isSearchListEmpty = true
+          : _isSearchListEmpty = false;
     });
   }
 }
